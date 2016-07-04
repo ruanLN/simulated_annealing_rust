@@ -1,0 +1,7 @@
+[package]
+name = "simulated_annealing_bpp_rust"
+version = "0.1.0"
+authors = ["Ruan Leitão Nunes <ruanrln@gmail.com>"]
+
+[dependencies]
+rand = "0.3"
