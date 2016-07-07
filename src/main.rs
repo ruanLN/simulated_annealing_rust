@@ -1,10 +1,13 @@
 extern crate rand;
+extern crate getopts;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::io::BufReader;
 use std::time::Instant;
+use getopts::Options;
+use std::env;
 
 #[derive(Clone)]
 pub struct Solution {
@@ -25,7 +28,7 @@ impl Solution {
 		tmp.eval();
 		return tmp;
     }
-	
+
 	fn change_randomically(&mut self) {
 		let i = rand::random::<usize>() % self.items.len();
 		let mut j = i;
@@ -35,7 +38,7 @@ impl Solution {
 		self.items.swap(i, j);
 		self.eval();
 	}
-	
+
 	fn eval(&mut self) -> u32 {
 		self.boxes = 0;
 		let mut temp: u32 = 0;
@@ -51,18 +54,57 @@ impl Solution {
 		if temp != 0 {
 			self.boxes += 1;
 		}
-		
+
 		fit_temp += (temp as f64).powi(2);
 		fit_temp /= self.boxes as f64;
 		self.fitness = fit_temp;
-		
+
 		return self.boxes;
 	}
 }
 
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} [options]", program);
+    print!("{}", opts.usage(&brief));
+}
+
 fn main() {
 
-	let path = Path::new("test_files/N1C1W1_A.BPP");
+	let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
+
+	let mut opts = Options::new();
+	opts.optopt("o", "", "set output file name", "NAME");
+	opts.reqopt("i", "", "set input file name", "NAME");
+	opts.optopt("t", "", "set start temperature to the system", "TEMP");
+	opts.optopt("l", "", "set the number os iterations for temperature", "ITER");
+    opts.optopt("l", "", "set the base random seed for the system", "SEED");
+	opts.optflag("d", "", "dinamically calculates the start temperature");
+	opts.optflag("r", "", "generate a simplified report output");
+    opts.optflag("h", "help", "print this text menu");
+
+	let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => {
+			print_usage(&program, opts);
+			return;
+		 }
+    };
+
+	if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
+
+	let in_file_name = match matches.opt_str("i") {
+		Some(s) => { s }
+		None => {
+			print_usage(&program, opts);
+			return;
+		}
+	};
+
+	let path = Path::new(&in_file_name);
     let display = path.display();
 
     // Open the path in read-only mode, returns io::Result<File>`
@@ -98,16 +140,16 @@ fn main() {
 			}
 		}
 		contador += 1;
-	}	
+	}
 
-	
+
 	//começa a marcar o tempo
 	let now = Instant::now();
-	
+
 	let sol  = Solution::new(b, items.clone());
 	let mut s_best = Solution::new(b, items.clone());
 	let mut s  = Solution::new(b, items.clone());
-	
+
 	let mut s_linha;
 	let mut t : f64 = 0.8;
 	let mut auxcounter: i32 = 0;
