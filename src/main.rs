@@ -74,18 +74,18 @@ fn main() {
     let program = args[0].clone();
 
 	let mut opts = Options::new();
-	opts.optopt("o", "", "set output file name", "NAME");
+	opts.optopt("o", "", "set output file name TODO", "NAME");
 	opts.reqopt("i", "", "set input file name", "NAME");
 	opts.optopt("t", "", "set start temperature to the system", "TEMP");
 	opts.optopt("l", "", "set the number os iterations for temperature", "ITER");
-    opts.optopt("l", "", "set the base random seed for the system", "SEED");
-	opts.optflag("d", "", "dinamically calculates the start temperature");
-	opts.optflag("r", "", "generate a simplified report output");
+    opts.optopt("s", "", "set the base random seed for the system TODO", "SEED");
+	opts.optflag("d", "", "dinamically calculates the start temperature TODO");
+	opts.optflag("r", "", "generate a simplified report output TODO");
     opts.optflag("h", "help", "print this text menu");
 
 	let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
-        Err(f) => {
+        Err(_) => {
 			print_usage(&program, opts);
 			return;
 		 }
@@ -95,6 +95,10 @@ fn main() {
         print_usage(&program, opts);
         return;
     }
+
+	let start_temp : f64 = matches.opt_str("t").unwrap_or(String::from("0.8")).parse::<f64>().unwrap_or(0.8f64);
+
+	let iters : i32 = matches.opt_str("l").unwrap_or(String::from("2000")).parse::<i32>().unwrap_or(2000);
 
 	let in_file_name = match matches.opt_str("i") {
 		Some(s) => { s }
@@ -151,10 +155,10 @@ fn main() {
 	let mut s  = Solution::new(b, items.clone());
 
 	let mut s_linha;
-	let mut t : f64 = 0.8;
+	let mut t : f64 = start_temp;
 	let mut auxcounter: i32 = 0;
 	while t > 0.001 {
-		for _ in 0..2000 {
+		for _ in 0..iters {
 			s_linha = s.clone();
 			s_linha.change_randomically();
 			if s_linha.fitness > s_best.fitness {
