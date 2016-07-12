@@ -29,14 +29,21 @@ impl Solution {
 		return tmp;
     }
 
-	fn change_randomically(&mut self) {
+	fn change_randomically(&mut self) -> (usize, usize) {
 		let i = rand::random::<usize>() % self.items.len();
-		let mut j = i;
-		while i == j {
-			j = rand::random::<usize>() % self.items.len();
-		}
+		// let mut j = i;
+		// while i == j {
+		// 	j = rand::random::<usize>() % self.items.len();
+		// }
+		let j = rand::random::<usize>() % self.items.len();
 		self.items.swap(i, j);
 		self.eval();
+		return (i,j)
+	}
+
+	fn change_and_eval(&mut self, i:usize, j:usize) {
+			self.items.swap(i,j);
+			self.eval();
 	}
 
 	fn eval(&mut self) -> u32 {
@@ -151,26 +158,22 @@ fn main() {
 	let now = Instant::now();
 
 	let sol  = Solution::new(b, items.clone());
-	let mut s_best = Solution::new(b, items.clone());
-	let mut s  = Solution::new(b, items.clone());
+	let mut s_best = sol.clone();
+	let mut s  = sol.clone();
 
-	let mut s_linha;
 	let mut t : f64 = start_temp;
 	let mut auxcounter: i32 = 0;
 	while t > 0.001 {
 		for _ in 0..iters {
-			s_linha = s.clone();
-			s_linha.change_randomically();
-			if s_linha.fitness > s_best.fitness {
-				s_best = s_linha.clone();
-			}
-			let delta: f64 = s_linha.fitness - s.fitness;
+			//s_linha = s.clone();
+			let s_fit = s.fitness;
+			let (i, j) = s.change_randomically();
+			let delta: f64 = s.fitness - s_fit;
 			if delta >= 0f64 {
 				auxcounter = 0;
-				s = s_linha.clone();
+				s_best.items = s.items.clone();
 			} else if rand::random::<f64>() < (delta / t).exp() {
 				auxcounter = 0;
-				s = s_linha.clone();
 			} else {
 				auxcounter += 1;
 				if auxcounter == 10 && t < 0.01f64 {
@@ -178,6 +181,7 @@ fn main() {
 					t = 0f64;
 					break;
 				}
+				s.change_and_eval(i, j);
 			}
 		}
 		t *= 0.99;
