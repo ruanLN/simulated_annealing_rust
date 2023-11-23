@@ -1,12 +1,14 @@
 extern crate rand;
-use std::error::Error;
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::io::BufReader;
+use std::rc::Rc;
 use std::time::Instant;
 
-#[derive(Clone)]
+
+#[derive(Clone, Debug)]
 pub struct Solution {
 	items : Vec<u32>,
 	box_size : u32,
@@ -16,105 +18,96 @@ pub struct Solution {
 
 impl Solution {
 	fn new(bs: u32, items: Vec<u32>) -> Solution {
-        let mut tmp = Solution {
+        let tmp = Solution {
             box_size: bs,
+            boxes: Self::boxes(&items, bs),
+			fitness: Self::eval(&items, bs),
             items: items,
-            boxes: 0,
-			fitness: 0_f64,
         };
-		tmp.eval();
 		return tmp;
     }
 	
-	fn change_randomically(&mut self) {
+	fn copy_mutate(&self) -> Self {
 		let i = rand::random::<usize>() % self.items.len();
 		let mut j = i;
 		while i == j {
 			j = rand::random::<usize>() % self.items.len();
 		}
-		self.items.swap(i, j);
-		self.eval();
+		let mut vec = self.items.clone();
+		vec.swap(i, j);
+		Solution::new(self.box_size, vec)
 	}
 	
-	fn eval(&mut self) -> u32 {
-		self.boxes = 0;
+
+	fn eval(items: &Vec<u32>, box_size: u32) -> f64 {
 		let mut temp: u32 = 0;
 		let mut fit_temp: f64 = 0_f64;
-		for item in &self.items {
+		for item in items {
 			temp += *item;
-			if temp > self.box_size {
-				fit_temp += (((temp - item) as f64) / self.box_size as f64).powi(2);
+			if temp > box_size {
+				fit_temp += (((temp - item) as f64) / box_size as f64).powi(2);
 				temp = *item;
-				self.boxes += 1;
 			}
-		}
-		if temp != 0 {
-			self.boxes += 1;
 		}
 		
 		fit_temp += (temp as f64).powi(2);
-		fit_temp /= self.boxes as f64;
-		self.fitness = fit_temp;
+		fit_temp /= Self::boxes(items, box_size) as f64;
 		
-		return self.boxes;
+		return fit_temp;
+	}
+
+	fn boxes(items: &Vec<u32>, box_size: u32) -> u32 {
+		let mut current_box = 0;
+		let mut total_boxes = 0;
+		for item in items {
+			if current_box > box_size {
+				current_box = 0;
+				total_boxes += 1;
+			}
+			current_box += item;
+		}
+		if current_box > 0 {
+			total_boxes += 1;
+		}
+		return total_boxes;
 	}
 }
 
 fn main() {
 
 	let path = Path::new("test_files/N1C1W1_A.BPP");
-    let display = path.display();
 
     // Open the path in read-only mode, returns io::Result<File>`
     let f = match File::open(&path) {
         // The `description` method of `io::Error` returns a string that
         // describes the error
-        Err(why) => panic!("couldn't open {}: {}", display,	why.description()),
+        Err(why) => panic!("couldn't open {}: {}", path.display(),	why),
         Ok(f) => f,
     };
 
 	let file = BufReader::new(&f);
-    let mut contador: u32 = 0;
 
-	let mut b: u32 = 0;
-	let mut items : Vec<u32> = Vec::new();
-	for line in file.lines() {
-		let trimmed = line.unwrap();
-		if contador == 0 {
+	let mut data = file.lines()
+		.skip(1)
+		.map(|s| s.unwrap())
+		.map(|s| s.parse::<u32>().unwrap());
 
-		} else if contador == 1 {
-			b = match trimmed.parse::<u32>() {
-				Ok(b) => b,
-				Err(..) => 0
-			};
-		} else {
-			let item : u32;
-			item = match trimmed.parse::<u32>() {
-				Ok(item) => item,
-				Err(..) => 0
-			};
-			if item != 0 {
-				items.push(item);
-			}
-		}
-		contador += 1;
-	}	
-
+	let b: u32 = data.next().unwrap();
+	let items : Vec<u32> = data.collect();
 	
 	//começa a marcar o tempo
 	let now = Instant::now();
 	
-	let sol  = Solution::new(b, items.clone());
-	let mut s_best = Solution::new(b, items.clone());
-	let mut s  = Solution::new(b, items.clone());
+	let sol  = Rc::new(Solution::new(b, items));
+	let mut s_best = sol.clone();
+	let mut s = sol.clone();
 	
 	let mut s_linha;
 	let mut t : f64 = 0.8;
 	let mut auxcounter: i32 = 0;
 	while t > 0.001 {
 		for _ in 0..2000 {
-			s_linha = s.clone();
-			s_linha.change_randomically();
+			s_linha = Rc::new(s.copy_mutate());
 			if s_linha.fitness > s_best.fitness {
 				s_best = s_linha.clone();
 			}
