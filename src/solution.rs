@@ -7,12 +7,12 @@ pub struct Solution {
 }
 
 impl Solution {
-    pub fn new(bs: u32, items: Vec<u32>) -> Self {
+    pub fn new(bs: u32, items: &[u32]) -> Self {
         Self {
             box_size: bs,
-            boxes: Self::boxes(&items, bs),
-            fitness: Self::eval(&items, bs),
-            items,
+            boxes: Self::boxes(items, bs),
+            fitness: Self::eval(items, bs),
+            items: items.to_vec(),
         }
     }
 
@@ -37,10 +37,10 @@ impl Solution {
         let mut vec = self.items.clone();
 
         vec.swap(i, j);
-        Self::new(self.box_size, vec)
+        Self::new(self.box_size, &vec)
     }
 
-    pub fn eval(items: &Vec<u32>, box_size: u32) -> f64 {
+    pub fn eval(items: &[u32], box_size: u32) -> f64 {
         let mut temp: u32 = 0;
         let mut fit_temp: f64 = 0_f64;
         for item in items {
@@ -57,7 +57,7 @@ impl Solution {
         fit_temp
     }
 
-    pub fn boxes(items: &Vec<u32>, box_size: u32) -> u32 {
+    pub fn boxes(items: &[u32], box_size: u32) -> u32 {
         let mut current_box = 0;
         let mut total_boxes = 0;
         for item in items {

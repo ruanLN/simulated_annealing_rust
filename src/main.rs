@@ -18,19 +18,18 @@ fn main() -> Result<()> {
 
     let file = BufReader::new(&f);
 
-    let mut data = file
+    let items = file
         .lines()
         .skip(1)
-        .map(Result::unwrap)
-        .filter_map(|s| s.parse::<u32>().ok());
+        .filter_map(Result::ok)
+        .filter_map(|s| s.parse::<u32>().ok())
+        .collect::<Vec<u32>>();
 
-    if let Some(b) = data.next() {
-        let items: Vec<u32> = data.collect();
-
+    if let Some((b, items)) = items.split_first() {
         //começa a marcar o tempo
         let now = Instant::now();
 
-        let sol = Rc::new(Solution::new(b, items));
+        let sol = Rc::new(Solution::new(*b, items));
         let mut s_best = sol.clone();
         let mut s = sol.clone();
 
