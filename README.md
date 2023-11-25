@@ -5,7 +5,7 @@ Na pasta test\_files existe um conjunto de instâncias do _bin packing problem_,
 ```let path = Path::new("test_files/N1C1W1_A.BPP");```
 o nome N1C1W1\_A.BPP pelo nome do arquivo que deseja testar.
 ## Compilando
-O projeto depende da crate _Rand_, já inclusa no arquivo Cargo.toml.
+O projeto depende da crate _Rand_, para aleatoriedade, e crate _anyhow_, para gerenciar erros, já inclusas no arquivo Cargo.toml.
 Para compilar em modo debug, já com o Rust instalado e no Path do sistema, use: 
 ```cargo build```
 Para executar em modo _debug_ use: 
