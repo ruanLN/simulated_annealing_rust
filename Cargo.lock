@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "simulated_annealing_bpp_rust"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "rand",

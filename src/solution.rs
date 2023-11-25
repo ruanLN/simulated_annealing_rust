@@ -22,7 +22,7 @@ impl Solution {
 
     pub fn print(self) {
         println!(
-            "\n numero de caixas da sol: {}, fitness: {}",
+            "\nnumero de caixas da sol: {}, fitness: {}",
             self.boxes, self.fitness
         );
         println!("Distribuição: {:?}", self.items);
@@ -30,11 +30,12 @@ impl Solution {
 
     pub fn copy_mutate(&self) -> Self {
         let i = rand::random::<usize>() % self.items.len();
-        let mut j = i;
-        while i == j {
-            j = rand::random::<usize>() % self.items.len();
-        }
+        let j = (0..)
+            .map(|_| rand::random::<usize>() % self.items.len())
+            .find(|j| j != &i)
+            .unwrap();
         let mut vec = self.items.clone();
+
         vec.swap(i, j);
         Self::new(self.box_size, vec)
     }
