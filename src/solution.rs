@@ -1,12 +1,18 @@
+use std::rc::Rc;
+
+pub trait Solution {
+    fn fitness(&self) -> f64;
+    fn copy_mutate(&self) -> Self;
+}
+
 #[derive(Clone, Debug)]
-pub struct Solution {
+pub struct BinPackingProblemSolution {
     items: Vec<u32>,
     box_size: u32,
     boxes: u32,
     fitness: f64,
 }
-
-impl Solution {
+impl BinPackingProblemSolution {
     pub fn new(bs: u32, items: &[u32]) -> Self {
         Self {
             box_size: bs,
@@ -16,28 +22,12 @@ impl Solution {
         }
     }
 
-    pub const fn fitness(&self) -> f64 {
-        self.fitness
-    }
-
     pub fn print(self) {
         println!(
             "\nnumero de caixas da sol: {}, fitness: {}",
             self.boxes, self.fitness
         );
         println!("Distribuição: {:?}", self.items);
-    }
-
-    pub fn copy_mutate(&self) -> Self {
-        let i = rand::random::<usize>() % self.items.len();
-        let j = (0..)
-            .map(|_| rand::random::<usize>() % self.items.len())
-            .find(|j| j != &i)
-            .unwrap();
-        let mut vec = self.items.clone();
-
-        vec.swap(i, j);
-        Self::new(self.box_size, &vec)
     }
 
     pub fn eval(items: &[u32], box_size: u32) -> f64 {
@@ -72,4 +62,51 @@ impl Solution {
         }
         total_boxes
     }
+}
+impl Solution for BinPackingProblemSolution {
+    fn fitness(&self) -> f64 {
+        self.fitness
+    }
+
+    fn copy_mutate(&self) -> Self {
+        let rng = &mut rand::thread_rng();
+        let a = rand::seq::index::sample(rng, self.items.len(), 2);
+        let (i, j) = (a.index(0), a.index(1));
+        let mut vec = self.items.clone();
+
+        vec.swap(i, j);
+        Self::new(self.box_size, &vec)
+    }
+}
+
+pub fn execute_simulated_annealing<T: Solution + Clone>(instance: T) -> (T, T) {
+    let sol = Rc::new(instance);
+    let mut s_best = sol.clone();
+    let mut s = sol.clone();
+
+    let mut s_linha;
+    let mut t: f64 = 0.8;
+    let mut auxcounter: i32 = 0;
+    while t > 0.001 {
+        for _ in 0..2000 {
+            s_linha = Rc::new(s.copy_mutate());
+            if s_linha.fitness() > s_best.fitness() {
+                s_best = s_linha.clone();
+            }
+            let delta: f64 = s_linha.fitness() - s.fitness();
+            if delta >= 0f64 || rand::random::<f64>() < (delta / t).exp() {
+                auxcounter = 0;
+                s = s_linha.clone();
+            } else {
+                auxcounter += 1;
+                if auxcounter == 10 && t < 0.01f64 {
+                    //Condição de parada caso haja muitas iterações sem troca de solução em um sistema relativamente esfriado
+                    t = 0f64;
+                    break;
+                }
+            }
+        }
+        t *= 0.99;
+    }
+    (sol.as_ref().clone(), s_best.as_ref().clone())
 }
